@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Processador de Consultas SQL</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <h2 class="mb-4">Processador de Consultas SQL</h2>
+
+    <form method="POST">
+        <div class="mb-3">
+            <label for="sql_query" class="form-label">Digite a consulta SQL:</label>
+            <textarea class="form-control" id="sql_query" name="sql_query" rows="3">{{ result.original if result else '' }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Processar</button>
+    </form>
+
+    {% if result.parsed %}
+    <hr>
+    <h4>Resultado do Parser:</h4>
+    <ul>
+        <li><strong>SELECT:</strong> {{ result.parsed.select_clause }}</li>
+        <li><strong>FROM:</strong> {{ result.parsed.from_clause }}</li>
+        {% if result.parsed.joins %}
+            <li><strong>JOIN:</strong> {{ result.parsed.joins[0] }}</li>
+            <li><strong>ON:</strong> {{ result.parsed.joins[1] }}</li>
+        {% endif %}
+        {% if result.parsed.where_clause %}
+            <li><strong>WHERE:</strong> {{ result.parsed.where_clause }}</li>
+        {% endif %}
+    </ul>
+
+    <h4>Álgebra Relacional:</h4>
+    <p class="bg-light border rounded p-3">{{ result.algebra }}</p>
+    {% elif result.original %}
+    <hr>
+    <div class="alert alert-danger">Consulta inválida! Verifique a sintaxe.</div>
+    {% endif %}
+
+    {% if result.erros %}
+    <div class="alert alert-danger mt-3">
+    <strong>Erros de Validação:</strong>
+    <ul>
+        {% for erro in result.erros %}
+            <li>{{ erro }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<h4>Grafo de Operadores (texto):</h4>
+<ul class="list-group">
+    {% for no in result.grafo %}
+    <li class="list-group-item">
+        <strong>{{ no.tipo|capitalize }}</strong> [{{ no.id }}] → 
+        {{ no.conteudo }} 
+        {% if no.inputs %} 
+            <br><small>Depende de: {{ no.inputs | join(', ') }}</small>
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+
+<h4>Visualização do Grafo:</h4>
+<img src="{{ url_for('static', filename='grafo.png') }}" class="img-fluid border rounded" alt="Grafo de operadores">
+
+<h4>Grafo Otimizado:</h4>
+<img src="{{ url_for('static', filename='grafo_otimizado.png') }}" class="img-fluid border rounded">
+
+
+<h4>Plano de Execução:</h4>
+<ol class="list-group list-group-numbered">
+    {% for passo in result.plano_execucao %}
+    <li class="list-group-item">{{ passo }}</li>
+    {% endfor %}
+</ol>
+
+<h4>Plano de Execução Otimizado:</h4>
+<ol class="list-group list-group-numbered">
+    {% for passo in result.plano_otimizado %}
+    <li class="list-group-item">{{ passo }}</li>
+    {% endfor %}
+</ol>
+
+</div>
+</body>
+</html>
